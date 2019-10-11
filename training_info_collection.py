@@ -60,7 +60,7 @@ class CollectTrainingData(object):
                     # change picture to grey
                     image = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_GRAYSCALE)
                     
-                    # select lower half of the image
+                    # select lower half of the image, region of interesting
                     height, width = image.shape
                     roi = image[int(height/2):height, :]
 
@@ -150,6 +150,7 @@ class CollectTrainingData(object):
                 print(e)
 
             end = cv2.getTickCount()
+
             # calculate streaming duration
             print("Streaming duration: , %.2fs" % ((end - start) / cv2.getTickFrequency()))
 
@@ -162,9 +163,8 @@ class CollectTrainingData(object):
         finally:
             self.sock.close()
 
-
 if __name__ == '__main__':
-    # host, port
+
     host_str = 'http://' + HOST + '/?action=stream'
     print ('Streaming ' + host_str)
 

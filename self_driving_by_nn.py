@@ -30,10 +30,13 @@ class sock_car_control(object):
     def stop(self):
         self.serial_port.write(chr(0).encode())
 
+    def close(self):
+        self.sock.close()
+
 
 class RCDriverNNOnly(object):
 
-    def __init__(self, host, port, serial_port, model_path):
+    def __init__(self, host_str, model_path):
 
         # load trained neural network
         self.nn = NeuralNetwork()
@@ -69,16 +72,15 @@ class RCDriverNNOnly(object):
 
                     # neural network makes prediction
                     prediction = self.nn.predict(image_array)
-                    self.rc_car.steer(prediction)
+                    self.car_ctrl.steer(prediction)
 
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         print("car stopped")
-                        self.rc_car.stop()
+                        self.car_ctrl.stop()
                         break
         finally:
             cv2.destroyAllWindows()
-            self.sock.close()
-
+            self.car_ctrl.close()
 
 if __name__ == '__main__':
     # host_str
