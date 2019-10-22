@@ -11,6 +11,7 @@ import serial
 import serial.tools.list_ports
 import json
 import _thread
+import re
 
 HOST = "192.168.11.1:8080"
 
@@ -33,17 +34,18 @@ class CarDrive(object):
         pygame.init()
         pygame.display.set_mode((250, 250))
 
-    def video_process(self):
-        # collect images for training
-        print("Start collecting images...")
-        print("Press 'q' or 'x' to finish...")
-        start = cv2.getTickCount()
+    def key_drive(self):
+        try:
+            # collect images for training
+            print("Start collecting images...")
+            start = cv2.getTickCount()
 
-        stream = urllib.request.urlopen(host_str)
+            stream = urllib.request.urlopen(host_str)
+        except:
+            print("connect fail.")
 
         try:
-            stream_bytes = b' '
-            frame = 1
+            stream_bytes = b''
             while self.send_inst:
                 stream_bytes += stream.read(1024)
                 first = stream_bytes.find(b'\xff\xd8')
@@ -62,69 +64,61 @@ class CarDrive(object):
 
                     cv2.imshow('image', image)
 
-                    # reshape the roi image into a vector
-                    temp_array = roi.reshape(1, int(height / 2) * width).astype(np.float32)
                     end = cv2.getTickCount()
-        except:
-            print('get video fail.')
+                # stream video frames one by one
+                # get input from human driver
+                for event in pygame.event.get():
+                    if event.type == KEYDOWN:
+                        key_input = pygame.key.get_pressed()
 
-    def key_drive(self):
-        while self.send_inst:
-            # stream video frames one by one
-            # get input from human driver
-            for event in pygame.event.get():
-                if event.type == KEYDOWN:
-                    key_input = pygame.key.get_pressed()
+                        # complex orders
+                        if key_input[pygame.K_UP] and key_input[pygame.K_RIGHT]:
+                            print("Forward Right")
+                            self.sock.send(chr(6).encode())
 
-                    # complex orders
-                    if key_input[pygame.K_UP] and key_input[pygame.K_RIGHT]:
-                        print("Forward Right")
-                        self.sock.send(chr(6).encode())
+                        elif key_input[pygame.K_UP] and key_input[pygame.K_LEFT]:
+                            print("Forward Left")
+                            self.sock.send(chr(7).encode())
 
-                    elif key_input[pygame.K_UP] and key_input[pygame.K_LEFT]:
-                        print("Forward Left")
-                        self.sock.send(chr(7).encode())
+                        elif key_input[pygame.K_DOWN] and key_input[pygame.K_RIGHT]:
+                            print("Reverse Right")
+                            self.sock.send(chr(8).encode())
 
-                    elif key_input[pygame.K_DOWN] and key_input[pygame.K_RIGHT]:
-                        print("Reverse Right")
-                        self.sock.send(chr(8).encode())
+                        elif key_input[pygame.K_DOWN] and key_input[pygame.K_LEFT]:
+                            print("Reverse Left")
+                            self.sock.send(chr(9).encode())
 
-                    elif key_input[pygame.K_DOWN] and key_input[pygame.K_LEFT]:
-                        print("Reverse Left")
-                        self.sock.send(chr(9).encode())
+                        # simple orders
+                        elif key_input[pygame.K_UP]:
+                            print("Forward")
+                            self.sock.send(chr(1).encode())
 
-                    # simple orders
-                    elif key_input[pygame.K_UP]:
-                        print("Forward")
+                        elif key_input[pygame.K_DOWN]:
+                            print("Reverse")
+                            #self.sock.send(chr(2).encode())
+                            self.sock.send(chr(0).encode())
+
+                        elif key_input[pygame.K_RIGHT]:
+                            print("Right")
+                            self.sock.send(chr(3).encode())
+
+                        elif key_input[pygame.K_LEFT]:
+                            print("Left")
+                            self.sock.send(chr(4).encode())
+
+                        elif key_input[pygame.K_x] or key_input[pygame.K_q]:
+                            print("exit")
+                            self.send_inst = False
+                            self.sock.send(chr(0).encode())
+                            self.sock.close()
+                            break
+
+                    elif event.type == pygame.KEYUP and ( key_input[pygame.K_LEFT] or key_input[pygame.K_RIGHT]):
                         self.sock.send(chr(1).encode())
+                        print("key up")
 
-                    elif key_input[pygame.K_DOWN]:
-                        print("Reverse")
-                        #self.sock.send(chr(2).encode())
-                        self.sock.send(chr(0).encode())
-
-                    elif key_input[pygame.K_RIGHT]:
-                        print("Right")
-                        self.sock.send(chr(3).encode())
-
-                    elif key_input[pygame.K_LEFT]:
-                        print("Left")
-                        self.sock.send(chr(4).encode())
-
-                    elif key_input[pygame.K_x] or key_input[pygame.K_q]:
-                        print("exit")
-                        self.send_inst = False
-                        self.sock.send(chr(0).encode())
-                        self.sock.close()
-                        break
-
-                elif event.type == pygame.KEYUP:
-                    #self.sock.send(chr(0).encode())
-                    print("key up")
-
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
         finally:
             self.sock.close()
 
@@ -134,15 +128,15 @@ class CarDrive(object):
 
     def backward(self):
         print("Reverse")
-        self.sock.send(chr(2).encode())
+        #self.sock.send(chr(2).encode())
 
     def left(self):
         print("Right")
-        self.sock.send(chr(3).encode())
+        #self.sock.send(chr(3).encode())
 
     def right(self):
         print("Left")
-        self.sock.send(chr(4).encode())
+        #self.sock.send(chr(4).encode())
 
     def stop(self):
         print("stop")
@@ -179,26 +173,26 @@ class Ser(object):
             data += cc
 
         if data:
-            print(data)
-            raw = re.match(r"/{.*?/}",data)
-            print(raw)
-            text = json.loads(raw)
+            print("data:%s" % data)
+            raw = re.match(r'\{(.*?)\}',data)
+            print("raw:%s" % raw.group())
+            text = json.loads(raw.group())
             return text
 
 def ser_fun(SER,cardrive):
-    cardrive.forward()
+    #cardrive.forward()
     while True:
         try:
             j = SER.recv()
+            print(j)
             if j != None:
-                print(j)
-                if(j['cmd_type'] == 1):
+                if(j['cmd'] == 1):
                     cardrive.stop()
+                    #requests.post("http://10.1.1.203:8080/getlist",{"position": j['pin']})
                     sleep(2)
-                    cardrive.forward()
-                    break
-        except:
-            print("reconnect serial.")
+                    #cardrive.forward()
+        except Exception as e:
+            print("reconnect serial. %s", e)
             SER.Serial_connect()
             sleep(1)
 
