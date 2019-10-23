@@ -184,13 +184,16 @@ def ser_fun(SER,cardrive):
     while True:
         try:
             j = SER.recv()
-            print(j)
+            #print(j)
             if j != None:
                 if(j['cmd'] == 1):
                     cardrive.stop()
                     #requests.post("http://10.1.1.203:8080/getlist",{"position": j['pin']})
                     sleep(2)
-                    #cardrive.forward()
+                if(j['cmd'] == 2):
+                    cardrive.stop()
+                    sleep(j['time'] / 1000)
+                    cardrive.forward()
         except Exception as e:
             print("reconnect serial. %s", e)
             SER.Serial_connect()
