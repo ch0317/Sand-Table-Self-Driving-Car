@@ -229,6 +229,7 @@ if __name__ == '__main__':
     # vector size, half of the image
     s = 120 * 320
     _thread.start_new_thread( ser_fun, (SER,cardrive,) )
+    _thread.start_new_thread( light_time, (SER,) )
 
     cardrive.key_drive()
 
