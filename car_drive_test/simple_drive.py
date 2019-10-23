@@ -188,12 +188,32 @@ def ser_fun(SER,cardrive):
             if j != None:
                 if(j['cmd'] == 1):
                     cardrive.stop()
-                    #requests.post("http://10.1.1.203:8080/getlist",{"position": j['pin']})
+                    try:
+                        requests.post("http://10.1.1.203:8080/getlist",{"position": j['pin']})
+                    except:
+                        print("post fail.")
                     sleep(2)
                 if(j['cmd'] == 2):
                     cardrive.stop()
+                    requests.post("http://10.1.1.203:8080/getlist", {"position": j['pin']})
                     sleep(j['time'] / 1000)
                     cardrive.forward()
+        except Exception as e:
+            print("reconnect serial. %s", e)
+            SER.Serial_connect()
+            sleep(1)
+
+def light_time(SER):
+    while True:
+        sleep(10)
+        try:
+            j = requests.get("http://10.1.1.203:8080/getlist")
+            light_time = j['time']
+        except:
+            print("get time fail.")
+
+        try:
+            SER.write("^" + str(light_time) + "$".encode())
         except Exception as e:
             print("reconnect serial. %s", e)
             SER.Serial_connect()
