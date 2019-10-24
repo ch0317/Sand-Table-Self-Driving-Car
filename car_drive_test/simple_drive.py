@@ -32,7 +32,14 @@ class CarDrive(object):
             self.k[i, i] = 1
 
         pygame.init()
-        pygame.display.set_mode((250, 250))
+        self.screen = pygame.display.set_mode((420, 240))
+        pygame.display.set_caption('智能网联无人车')
+        self.background_image = pygame.image.load("background.jpg").convert()
+        self.forward_image = pygame.image.load("forward.png").convert()
+        self.backward_image = pygame.image.load("backward.png").convert()
+        self.left_image = pygame.image.load("left.png").convert()
+        self.right_image = pygame.image.load("right.png").convert()
+        self.stop_image = pygame.image.load("stop.png").convert()
 
     def key_drive(self):
         try:
@@ -55,19 +62,57 @@ class CarDrive(object):
                     jpg = stream_bytes[first:last + 2]
                     stream_bytes = stream_bytes[last + 2:]
                     # change picture to grey
-                    image = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_GRAYSCALE)
+                    #image = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_GRAYSCALE)
+                    image = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
+                    self.screen.fill([0, 0, 0])
+                    #image = cv2.cvtColor(jpg, cv2.COLOR_BGR2RGB)
+                    image = np.rot90(image)
                     # image = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8))
+                    image = pygame.surfarray.make_surface(image)
+                    self.screen.blit(image, (0,0))
+                    self.screen.blit(self.background_image, (320, 0))
+                    self.screen.blit(self.forward_image, (350, 30))
+                    self.screen.blit(self.backward_image, (350, 135))
+                    self.screen.blit(self.left_image, (330, 77))
+                    self.screen.blit(self.right_image, (380, 77))
+                    self.screen.blit(self.stop_image, (350, 180))
 
+                    pygame.display.update()
                     # select lower half of the image, region of interesting
-                    height, width = image.shape
-                    roi = image[int(height / 2):height, :]
-
-                    cv2.imshow('image', image)
+                    #height, width = image.shape
+                    #roi = image[int(height / 2):height, :]
+                    #cv2.imshow('image', image)
 
                     end = cv2.getTickCount()
                 # stream video frames one by one
                 # get input from human driver
                 for event in pygame.event.get():
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        # Set the x, y postions of the mouse click
+                        x, y = event.pos
+                        #print(x,y)
+                        if self.forward_image.get_rect(topleft=(350, 30)).collidepoint(x, y):
+                            self.forward()
+                        if self.backward_image.get_rect(topleft=(350, 135)).collidepoint(x, y):
+                            self.backward()
+                        if self.left_image.get_rect(topleft=(330, 77)).collidepoint(x, y):
+                            self.left()
+                        if self.right_image.get_rect(topleft=(380, 77)).collidepoint(x, y):
+                            self.right()
+                        if self.stop_image.get_rect(topleft=(350, 180)).collidepoint(x, y):
+                            self.stop()
+
+                    if event.type == pygame.MOUSEBUTTONUP:
+                        # Set the x, y postions of the mouse click
+                        x, y = event.pos
+                        #print(x,y)
+                        if self.left_image.get_rect(topleft=(330, 77)).collidepoint(x, y):
+                            self.forward()
+                        if self.right_image.get_rect(topleft=(380, 77)).collidepoint(x, y):
+                            self.forward()
+                        if self.backward_image.get_rect(topleft=(350, 135)).collidepoint(x, y):
+                            self.stop()
+
                     if event.type == KEYDOWN:
                         key_input = pygame.key.get_pressed()
 
@@ -128,15 +173,15 @@ class CarDrive(object):
 
     def backward(self):
         print("Reverse")
-        #self.sock.send(chr(2).encode())
+        self.sock.send(chr(2).encode())
 
     def left(self):
         print("Right")
-        #self.sock.send(chr(3).encode())
+        self.sock.send(chr(3).encode())
 
     def right(self):
         print("Left")
-        #self.sock.send(chr(4).encode())
+        self.sock.send(chr(4).encode())
 
     def stop(self):
         print("stop")
@@ -213,7 +258,7 @@ def light_time(SER):
             print("get time fail.")
 
         try:
-            SER.write("^" + str(light_time) + "$".encode())
+            SER.write(("^" + str(light_time) + "$").encode())
         except Exception as e:
             print("reconnect serial. %s", e)
             SER.Serial_connect()
