@@ -249,20 +249,22 @@ def ser_fun(SER,cardrive):
             sleep(1)
 
 def light_time(SER):
+    last_time = 18000
     while True:
         sleep(10)
         try:
-            j = requests.get("http://10.1.1.203:8080/getlist")
+            j = requests.get("http://10.1.1.203:8080/motorcar")
             light_time = j['time']
+            if light_time != last_time:
+                try:
+                    SER.write(("^" + str(light_time) + "$").encode())
+                except Exception as e:
+                    print("reconnect serial. %s", e)
+                    SER.Serial_connect()
+                    sleep(1)
         except:
             print("get time fail.")
 
-        try:
-            SER.write(("^" + str(light_time) + "$").encode())
-        except Exception as e:
-            print("reconnect serial. %s", e)
-            SER.Serial_connect()
-            sleep(1)
 
 if __name__ == '__main__':
 
