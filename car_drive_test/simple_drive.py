@@ -223,7 +223,8 @@ class Ser(object):
             print("raw:%s" % raw.group())
             text = json.loads(raw.group())
             return text
-
+    def write(self, s):
+        self.S.write(s)
 def ser_fun(SER,cardrive):
     #cardrive.forward()
     while True:
@@ -234,15 +235,17 @@ def ser_fun(SER,cardrive):
                 if(j['cmd'] == 1):
                     cardrive.stop()
                     try:
-                        requests.post("http://10.1.1.203:8080/getlist",{"position": j['pin']})
+                        requests.post("http://10.1.1.203:8080/motorcar",{"position": j['pin']})
                     except:
                         print("post fail.")
                     sleep(2)
                 if(j['cmd'] == 2):
                     cardrive.stop()
-                    requests.post("http://10.1.1.203:8080/getlist", {"position": j['pin']})
+                    requests.post("http://10.1.1.203:8080/motorcar", {"position": j['pin']})
                     sleep(j['time'] / 1000)
                     cardrive.forward()
+                if(j['cmd'] == 3):
+                    requests.post("http://10.1.1.203:8080/motorcar", {"position": j['pin']})
         except Exception as e:
             print("reconnect serial. %s", e)
             SER.Serial_connect()
@@ -254,10 +257,13 @@ def light_time(SER):
         sleep(10)
         try:
             j = requests.get("http://10.1.1.203:8080/motorcar")
-            light_time = j['time']
+            i = json.loads(j.text)
+            light_time = i['time']
+            #print(str(light_time))
             if light_time != last_time:
                 try:
                     SER.write(("^" + str(light_time) + "$").encode())
+                    last_time = light_time
                 except Exception as e:
                     print("reconnect serial. %s", e)
                     SER.Serial_connect()
