@@ -92,7 +92,7 @@ class CarDrive(object):
                         x, y = event.pos
                         #print(x,y)
                         if self.forward_image.get_rect(topleft=(350, 30)).collidepoint(x, y):
-                            self.forward()
+                            self.fast_forward()
                         if self.backward_image.get_rect(topleft=(350, 135)).collidepoint(x, y):
                             self.backward()
                         if self.left_image.get_rect(topleft=(330, 77)).collidepoint(x, y):
@@ -106,6 +106,8 @@ class CarDrive(object):
                         # Set the x, y postions of the mouse click
                         x, y = event.pos
                         #print(x,y)
+                        if self.forward_image.get_rect(topleft=(350, 30)).collidepoint(x, y):
+                            self.forward()
                         if self.left_image.get_rect(topleft=(330, 77)).collidepoint(x, y):
                             self.forward()
                         if self.right_image.get_rect(topleft=(380, 77)).collidepoint(x, y):
@@ -136,7 +138,7 @@ class CarDrive(object):
                         # simple orders
                         elif key_input[pygame.K_UP]:
                             print("Forward")
-                            self.sock.send(chr(1).encode())
+                            self.sock.send(chr(10).encode())
 
                         elif key_input[pygame.K_DOWN]:
                             print("Reverse")
@@ -158,7 +160,7 @@ class CarDrive(object):
                             self.sock.close()
                             break
 
-                    elif event.type == pygame.KEYUP and ( key_input[pygame.K_LEFT] or key_input[pygame.K_RIGHT]):
+                    elif event.type == pygame.KEYUP and ( key_input[pygame.K_LEFT] or key_input[pygame.K_RIGHT] or key_input[pygame.K_UP]):
                         self.sock.send(chr(1).encode())
                         print("key up")
 
@@ -171,15 +173,19 @@ class CarDrive(object):
         print("Forward")
         self.sock.send(chr(1).encode())
 
+    def fast_forward(self):
+        print("Forward")
+        self.sock.send(chr(10).encode())
+
     def backward(self):
         print("Reverse")
         self.sock.send(chr(2).encode())
 
-    def left(self):
+    def right(self):
         print("Right")
         self.sock.send(chr(3).encode())
 
-    def right(self):
+    def left(self):
         print("Left")
         self.sock.send(chr(4).encode())
 
@@ -238,7 +244,10 @@ def ser_fun(SER,cardrive):
                         requests.post("http://10.1.1.203:8080/motorcar",{"position": j['pin']})
                     except:
                         print("post fail.")
-                    sleep(2)
+                    sleep(0.25)
+                    cardrive.fast_forward()
+                    sleep(3)
+                    cardrive.forward()
                 if(j['cmd'] == 2):
                     cardrive.stop()
                     requests.post("http://10.1.1.203:8080/motorcar", {"position": j['pin']})
@@ -258,12 +267,13 @@ def light_time(SER):
         try:
             j = requests.get("http://10.1.1.203:8080/motorcar")
             i = json.loads(j.text)
-            light_time = i['time']
+            light_time = int(i['time'] ) * 1000
             #print(str(light_time))
             if light_time != last_time:
                 try:
                     SER.write(("^" + str(light_time) + "$").encode())
                     last_time = light_time
+                    print("set time %d" % light_time)
                 except Exception as e:
                     print("reconnect serial. %s", e)
                     SER.Serial_connect()
