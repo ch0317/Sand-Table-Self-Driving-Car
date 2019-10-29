@@ -171,7 +171,10 @@ class CarDrive(object):
                             break
 
                     elif event.type == pygame.KEYUP and (key_input[pygame.K_LEFT] or key_input[pygame.K_RIGHT] or key_input[pygame.K_DOWN]):
-                        self.sock.send(chr(1).encode())
+                        if self.speed_level == 0:
+                            self.forward()
+                        else:
+                            self.fast_forward()
                         print("key up")
                         if key_input[pygame.K_DOWN]:
                             self.sock.send(chr(0).encode())
