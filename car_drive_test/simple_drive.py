@@ -25,6 +25,7 @@ class CarDrive(object):
             print ("socket connect.")
 
         self.send_inst = True
+        self.speed_level = 1
 
         # create labels
         self.k = np.zeros((4, 4), 'float')
@@ -138,12 +139,17 @@ class CarDrive(object):
                         # simple orders
                         elif key_input[pygame.K_UP]:
                             print("Forward")
-                            self.sock.send(chr(10).encode())
+                            if self.speed_level == 0:
+                                self.speed_level = 1
+                                self.sock.send(chr(10).encode())
+                            elif self.speed_level == 1:
+                                self.speed_level = 0
+                                self.sock.send(chr(1).encode())
 
                         elif key_input[pygame.K_DOWN]:
                             print("Reverse")
                             #self.sock.send(chr(2).encode())
-                            self.sock.send(chr(0).encode())
+                            self.backward()
 
                         elif key_input[pygame.K_RIGHT]:
                             print("Right")
@@ -160,9 +166,15 @@ class CarDrive(object):
                             self.sock.close()
                             break
 
-                    elif event.type == pygame.KEYUP and ( key_input[pygame.K_LEFT] or key_input[pygame.K_RIGHT] or key_input[pygame.K_UP]):
+                        elif key_input[pygame.K_a]:
+                            self.sock.send(chr(11).encode())
+                            break
+
+                    elif event.type == pygame.KEYUP and (key_input[pygame.K_LEFT] or key_input[pygame.K_RIGHT] or key_input[pygame.K_DOWN]):
                         self.sock.send(chr(1).encode())
                         print("key up")
+                        if key_input[pygame.K_DOWN]:
+                            self.sock.send(chr(0).encode())
 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
@@ -276,7 +288,7 @@ def light_time(SER):
                     print("set time %d" % light_time)
                 except Exception as e:
                     print("reconnect serial. %s", e)
-                    SER.Serial_connect()
+                    #SER.Serial_connect()
                     sleep(1)
         except:
             print("get time fail.")
