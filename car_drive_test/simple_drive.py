@@ -155,11 +155,11 @@ class CarDrive(object):
                                 self.forward()
                                 self.speed_up = 0
 
-                        elif key_input[pygame.K_END]:
-                            self.sock.send(chr(13).encode())
+                        elif key_input[pygame.K_PAGEDOWN]:
+                            self.line_forward_stop()
 
-                        elif key_input[pygame.K_RSHIFT]:
-                            self.sock.send(chr(12).encode())
+                        elif key_input[pygame.K_PAGEUP]:
+                            self.line_forward()
 
                         elif key_input[pygame.K_DOWN]:
                             print("Reverse")
@@ -203,6 +203,18 @@ class CarDrive(object):
     def fast_forward(self):
         print("Forward")
         self.sock.send(chr(10).encode())
+
+    def line_forward(self):
+        print("Line Forward")
+        self.sock.send(chr(12).encode())
+
+    def fast_line_forward(self):
+        print("Line Forward")
+        self.sock.send(chr(14).encode())
+
+    def line_forward_stop(self):
+        print("line_forward_stop")
+        self.sock.send(chr(13).encode())
 
     def backward(self):
         print("Reverse")
@@ -272,10 +284,10 @@ def ser_fun(SER,cardrive):
                         requests.post("http://10.1.1.203:8080/motorcar",{"position": j['pin']})
                     except:
                         print("post fail.")
-                    sleep(0.25)
-                    cardrive.fast_forward()
-                    sleep(3)
-                    cardrive.forward()
+                    sleep(0.05)
+                    cardrive.fast_line_forward()
+                    sleep(2)
+                    cardrive.line_forward()
                 if(j['cmd'] == 2):
                     cardrive.stop()
                     requests.post("http://10.1.1.203:8080/motorcar", {"position": j['pin']})
