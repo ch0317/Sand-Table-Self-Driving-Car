@@ -25,7 +25,7 @@ class CarDrive(object):
             print ("socket connect.")
 
         self.send_inst = True
-        self.speed_level = 1
+        self.speed_up = 0
 
         # create labels
         self.k = np.zeros((4, 4), 'float')
@@ -139,12 +139,27 @@ class CarDrive(object):
                         # simple orders
                         elif key_input[pygame.K_UP]:
                             print("Forward")
-                            if self.speed_level == 0:
+                            self.forward()
+                            '''if self.speed_level == 0:
                                 self.speed_level = 1
                                 self.sock.send(chr(10).encode())
                             elif self.speed_level == 1:
                                 self.speed_level = 0
-                                self.sock.send(chr(1).encode())
+                                self.sock.send(chr(1).encode())'''
+
+                        elif key_input[pygame.K_RCTRL]:
+                            if self.speed_up == 0:
+                                self.fast_forward()
+                                self.speed_up = 1
+                            else:
+                                self.forward()
+                                self.speed_up = 0
+
+                        elif key_input[pygame.K_END]:
+                            self.sock.send(chr(13).encode())
+
+                        elif key_input[pygame.K_RSHIFT]:
+                            self.sock.send(chr(12).encode())
 
                         elif key_input[pygame.K_DOWN]:
                             print("Reverse")
@@ -153,11 +168,11 @@ class CarDrive(object):
 
                         elif key_input[pygame.K_RIGHT]:
                             print("Right")
-                            self.sock.send(chr(3).encode())
+                            self.right()
 
                         elif key_input[pygame.K_LEFT]:
                             print("Left")
-                            self.sock.send(chr(4).encode())
+                            self.left()
 
                         elif key_input[pygame.K_x] or key_input[pygame.K_q]:
                             print("exit")
@@ -171,10 +186,7 @@ class CarDrive(object):
                             break
 
                     elif event.type == pygame.KEYUP and (key_input[pygame.K_LEFT] or key_input[pygame.K_RIGHT] or key_input[pygame.K_DOWN]):
-                        if self.speed_level == 0:
-                            self.forward()
-                        else:
-                            self.fast_forward()
+                        self.forward()
                         print("key up")
                         if key_input[pygame.K_DOWN]:
                             self.sock.send(chr(0).encode())
@@ -246,6 +258,7 @@ class Ser(object):
             return text
     def write(self, s):
         self.S.write(s)
+
 def ser_fun(SER,cardrive):
     #cardrive.forward()
     while True:
@@ -267,7 +280,7 @@ def ser_fun(SER,cardrive):
                     cardrive.stop()
                     requests.post("http://10.1.1.203:8080/motorcar", {"position": j['pin']})
                     sleep(j['time'] / 1000)
-                    cardrive.forward()
+                    cardrive.fast_forward()
                 if(j['cmd'] == 3):
                     requests.post("http://10.1.1.203:8080/motorcar", {"position": j['pin']})
         except Exception as e:
@@ -275,24 +288,28 @@ def ser_fun(SER,cardrive):
             SER.Serial_connect()
             sleep(1)
 
-def light_time(SER):
+def get_cmd_from_server(SER, cardrive):
     last_time = 18000
     while True:
-        sleep(10)
+        sleep(2)
         try:
             j = requests.get("http://10.1.1.203:8080/motorcar")
             i = json.loads(j.text)
-            light_time = int(i['time'] ) * 1000
-            #print(str(light_time))
-            if light_time != last_time:
-                try:
-                    SER.write(("^" + str(light_time) + "$").encode())
-                    last_time = light_time
-                    print("set time %d" % light_time)
-                except Exception as e:
-                    print("reconnect serial. %s", e)
-                    #SER.Serial_connect()
-                    sleep(1)
+            if i['cmd'] == 1:
+                light_time = int(i['time'] ) * 1000
+                #print(str(light_time))
+                if light_time != last_time:
+                    try:
+                        SER.write(("^" + str(light_time) + "$").encode())
+                        last_time = light_time
+                        print("set time %d" % light_time)
+                    except Exception as e:
+                        print("reconnect serial. %s", e)
+                        #SER.Serial_connect()
+                        sleep(1)
+            elif i['cmd'] == 2:
+                print("car 1")
+                cardrive.forward()
         except:
             print("get time fail.")
 
@@ -307,7 +324,7 @@ if __name__ == '__main__':
     # vector size, half of the image
     s = 120 * 320
     _thread.start_new_thread( ser_fun, (SER,cardrive,) )
-    _thread.start_new_thread( light_time, (SER,) )
+    _thread.start_new_thread( get_cmd_from_server, (SER,cardrive,) )
 
     cardrive.key_drive()
 
