@@ -281,20 +281,23 @@ def ser_fun(SER,cardrive):
                 if(j['cmd'] == 1):
                     cardrive.stop()
                     try:
-                        requests.post("http://10.1.1.203:8080/motorcar",{"position": j['pin']})
+                        #requests.post("http://10.1.1.203:8080/motorcar",{"position": j['pin']})
+                        pass
                     except:
                         print("post fail.")
-                    sleep(0.05)
-                    cardrive.fast_line_forward()
-                    sleep(2)
-                    cardrive.line_forward()
-                if(j['cmd'] == 2):
-                    cardrive.stop()
-                    requests.post("http://10.1.1.203:8080/motorcar", {"position": j['pin']})
-                    sleep(j['time'] / 1000)
+                    sleep(0.25)
                     cardrive.fast_forward()
+                    sleep(0.1)
+                    cardrive.fast_line_forward()
+                if(j['cmd'] == 2):
+                    cardrive.line_forward_stop()
+                    cardrive.stop()
+                    #requests.post("http://10.1.1.203:8080/motorcar", {"position": j['pin']})
+                    sleep(j['time'] / 1000)
+                    cardrive.line_forward()
                 if(j['cmd'] == 3):
-                    requests.post("http://10.1.1.203:8080/motorcar", {"position": j['pin']})
+                    #requests.post("http://10.1.1.203:8080/motorcar", {"position": j['pin']})
+                    pass
         except Exception as e:
             print("reconnect serial. %s", e)
             SER.Serial_connect()
@@ -302,7 +305,7 @@ def ser_fun(SER,cardrive):
 
 def get_cmd_from_server(SER, cardrive):
     last_time = 18000
-    while True:
+    '''while True:
         sleep(2)
         try:
             j = requests.get("http://10.1.1.203:8080/motorcar")
@@ -323,7 +326,7 @@ def get_cmd_from_server(SER, cardrive):
                 print("car 1")
                 cardrive.forward()
         except:
-            print("get time fail.")
+            print("get time fail.")'''
 
 
 if __name__ == '__main__':
