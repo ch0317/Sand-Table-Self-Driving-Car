@@ -279,25 +279,45 @@ def ser_fun(SER,cardrive):
             #print(j)
             if j != None:
                 if(j['cmd'] == 1):
-                    cardrive.stop()
+
                     try:
-                        #requests.post("http://10.1.1.203:8080/motorcar",{"position": j['pin']})
-                        pass
+                        requests.post("http://10.1.1.203:8080/motorcar",{"position": j['pin']})
                     except:
-                        print("post fail.")
-                    sleep(0.25)
-                    cardrive.fast_forward()
-                    sleep(0.1)
-                    cardrive.fast_line_forward()
+                        print("cmd 1 post fail.")
+                    if j['pin'] != 46 and j['pin'] != 47:
+                        cardrive.stop()
+                        sleep(0.25)
+                        cardrive.fast_forward()
+                        sleep(0.1)
+                        cardrive.fast_line_forward()
+
                 if(j['cmd'] == 2):
                     cardrive.line_forward_stop()
                     cardrive.stop()
-                    #requests.post("http://10.1.1.203:8080/motorcar", {"position": j['pin']})
+                    try:
+                        requests.post("http://10.1.1.203:8080/motorcar", {"position": j['pin']})
+                    except:
+                        print("cmd 2 post fail.")
+                    sleep(0.25)
+                    cardrive.fast_forward()
+                    print("fast forward.")
+                    sleep(0.1)
+                    cardrive.stop()
+                    #print("stop wait %f" % j['time'] / 1000)
                     sleep(j['time'] / 1000)
                     cardrive.line_forward()
+
                 if(j['cmd'] == 3):
-                    #requests.post("http://10.1.1.203:8080/motorcar", {"position": j['pin']})
-                    pass
+                    cardrive.line_forward_stop()
+                    cardrive.stop()
+                    cardrive.fast_forward()
+                    sleep(0.1)
+                    cardrive.line_forward()
+                    try:
+                        requests.post("http://10.1.1.203:8080/motorcar", {"position": j['pin']})
+                    except:
+                        print("cmd 3 post fail.")
+
         except Exception as e:
             print("reconnect serial. %s", e)
             SER.Serial_connect()
@@ -305,28 +325,32 @@ def ser_fun(SER,cardrive):
 
 def get_cmd_from_server(SER, cardrive):
     last_time = 18000
-    '''while True:
+    while True:
         sleep(2)
         try:
             j = requests.get("http://10.1.1.203:8080/motorcar")
             i = json.loads(j.text)
-            if i['cmd'] == 1:
-                light_time = int(i['time'] ) * 1000
-                #print(str(light_time))
-                if light_time != last_time:
-                    try:
-                        SER.write(("^" + str(light_time) + "$").encode())
-                        last_time = light_time
-                        print("set time %d" % light_time)
-                    except Exception as e:
-                        print("reconnect serial. %s", e)
-                        #SER.Serial_connect()
-                        sleep(1)
-            elif i['cmd'] == 2:
+
+            light_time = int(i['time'] ) * 1000
+            #print(str(light_time))
+            if light_time != last_time:
+                try:
+                    SER.write(("^" + str(light_time) + "$").encode())
+                    last_time = light_time
+                    print("set time %d" % light_time)
+                except Exception as e:
+                    print("reconnect serial. %s", e)
+                    #SER.Serial_connect()
+                    sleep(1)
+
+            line_json = requests.get("http://10.1.1.203:8080/motorline")
+            line_info = json.loads(line_json.text)
+
+            if line_info['cmd'] == 1:
                 print("car 1")
-                cardrive.forward()
+                cardrive.line_forward()
         except:
-            print("get time fail.")'''
+            print("get time fail.")
 
 
 if __name__ == '__main__':
