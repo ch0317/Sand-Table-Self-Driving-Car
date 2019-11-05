@@ -14,6 +14,9 @@ import _thread
 import re
 
 HOST = "192.168.11.1:8080"
+NORMAL_GATE_MECHINE = 1
+RED_LIGHT = 2
+GREEN_LIGHT =3
 
 class CarDrive(object):
     
@@ -278,8 +281,7 @@ def ser_fun(SER,cardrive):
             j = SER.recv()
             #print(j)
             if j != None:
-                if(j['cmd'] == 1):
-
+                if(j['cmd'] == NORMAL_GATE_MECHINE):
                     try:
                         requests.post("http://10.1.1.203:8080/motorcar",{"position": j['pin']})
                     except:
@@ -291,7 +293,7 @@ def ser_fun(SER,cardrive):
                         sleep(0.1)
                         cardrive.fast_line_forward()
 
-                if(j['cmd'] == 2):
+                if(j['cmd'] == RED_LIGHT):
                     cardrive.line_forward_stop()
                     cardrive.stop()
                     try:
@@ -307,7 +309,7 @@ def ser_fun(SER,cardrive):
                     sleep(j['time'] / 1000)
                     cardrive.line_forward()
 
-                if(j['cmd'] == 3):
+                if(j['cmd'] == GREEN_LIGHT):
                     cardrive.line_forward_stop()
                     cardrive.stop()
                     cardrive.fast_forward()
