@@ -14,9 +14,6 @@ import _thread
 import re
 
 HOST = "192.168.11.1:8080"
-NORMAL_GATE_MECHINE = 1
-RED_LIGHT = 2
-GREEN_LIGHT =3
 
 class CarDrive(object):
     
@@ -271,6 +268,21 @@ class Ser(object):
             print("raw:%s" % raw.group())
             text = json.loads(raw.group())
             return text
+
+    def recv1(self):
+        line = []
+        data = ''
+        while True:
+            cc = self.S.readline().decode()
+            #print(cc)
+            if len(cc) == 0:
+                break
+            data += cc
+
+        if data:
+            print("data:%s" % data)
+
+
     def write(self, s):
         self.S.write(s)
 
@@ -281,19 +293,24 @@ def ser_fun(SER,cardrive):
             j = SER.recv()
             #print(j)
             if j != None:
-                if(j['cmd'] == NORMAL_GATE_MECHINE):
-                    try:
-                        requests.post("http://10.1.1.203:8080/motorcar",{"position": j['pin']})
-                    except:
-                        print("cmd 1 post fail.")
+                if(j['cmd'] == 1):
+
                     if j['pin'] != 46 and j['pin'] != 47:
                         cardrive.stop()
-                        sleep(0.25)
+                        sleep(0.05)
                         cardrive.fast_forward()
+                        try:
+                            requests.post("http://10.1.1.203:8080/motorcar", {"position": j['pin']})
+                        except:
+                            print("cmd 1 post fail.")
                         sleep(0.1)
                         cardrive.fast_line_forward()
+                    try:
+                        requests.post("http://10.1.1.203:8080/motorcar", {"position": j['pin']})
+                    except:
+                        print("cmd 1 post fail.")
 
-                if(j['cmd'] == RED_LIGHT):
+                if(j['cmd'] == 2):
                     cardrive.line_forward_stop()
                     cardrive.stop()
                     try:
@@ -309,7 +326,7 @@ def ser_fun(SER,cardrive):
                     sleep(j['time'] / 1000)
                     cardrive.line_forward()
 
-                if(j['cmd'] == GREEN_LIGHT):
+                if(j['cmd'] == 3):
                     cardrive.line_forward_stop()
                     cardrive.stop()
                     cardrive.fast_forward()
@@ -340,8 +357,9 @@ def get_cmd_from_server(SER, cardrive):
                     SER.write(("^" + str(light_time) + "$").encode())
                     last_time = light_time
                     print("set time %d" % light_time)
+                    SER.recv1()
                 except Exception as e:
-                    print("reconnect serial. %s", e)
+                    print("%s", e)
                     #SER.Serial_connect()
                     sleep(1)
 
