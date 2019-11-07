@@ -299,8 +299,13 @@ def ser_fun(SER,cardrive):
                         cardrive.stop()
                         sleep(0.05)
                         cardrive.fast_forward()
+                        try:
+                            requests.post("http://10.1.1.203:8080/motorcar", {"position": j['pin']})
+                        except:
+                            print("cmd 1 post fail.")
                         sleep(0.1)
                         cardrive.fast_line_forward()
+<<<<<<< HEAD
                         try:
                             requests.post("http://10.1.1.203:8080/motorcar", {"position": j['pin']})
                         except:
@@ -310,6 +315,12 @@ def ser_fun(SER,cardrive):
                             requests.post("http://10.1.1.203:8080/motorcar", {"position": j['pin']})
                         except:
                             print("cmd 1 post fail.")
+=======
+                    try:
+                        requests.post("http://10.1.1.203:8080/motorcar", {"position": j['pin']})
+                    except:
+                        print("cmd 1 post fail.")
+>>>>>>> 40bf8038c65861e38410dedaac8432d88c7cb5a0
 
                 if(j['cmd'] == 2):
                     cardrive.line_forward_stop()
